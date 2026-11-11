@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cnpg-system
+resources:
+- certificate-issuer.yaml
+- client-certificate.yaml
+- server-certificate.yaml
+- deployment.yaml
+- service.yaml
+images:
+- name: cnpg-i-pganalyze
+  newName: ghcr.io/pganalyze/cnpg-i-pganalyze
+  newTag: main

@@ -1,0 +1,6 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: cnpg-i-pganalyze-selfsigned-issuer
+spec:
+  selfSigned: {}

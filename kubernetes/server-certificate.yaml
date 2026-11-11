@@ -1,0 +1,21 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cnpg-i-pganalyze-server
+spec:
+  secretName: cnpg-i-pganalyze-server-tls
+  commonName: "cnpg-i-pganalyze"
+  dnsNames:
+    - cnpg-i-pganalyze
+    - cnpg-i-pganalyze.cnpg-system
+    - cnpg-i-pganalyze.cnpg-system.svc
+    - cnpg-i-pganalyze.cnpg-system.svc.cluster.local
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  isCA: false
+  usages:
+    - server auth
+  issuerRef:
+    name: cnpg-i-pganalyze-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io

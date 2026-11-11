@@ -1,0 +1,27 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cluster-example
+spec:
+  instances: 2
+  storage:
+    size: 1Gi
+
+  plugins:
+  - name: cnpg-i-pganalyze.pganalyze.com
+    # All parameters are optional when the plugin has a default API key:
+    # parameters:
+    #   apiKeySecretName: pganalyze-api-key   # Secret in this namespace, key PGA_API_KEY
+    #   databases: "postgres,*"
+    #   logs: "true"
+    #   autoSetup: "true"
+
+  postgresql:
+    # Lets the collector sidecar connect as the pganalyze role over the
+    # Unix socket, without a password
+    pg_ident:
+    - local postgres pganalyze
+    parameters:
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: "all"
+      track_io_timing: "on"

@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cnpg-i-pganalyze
+  labels:
+    app: cnpg-i-pganalyze
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cnpg-i-pganalyze
+  template:
+    metadata:
+      labels:
+        app: cnpg-i-pganalyze
+    spec:
+      # The plugin only answers the operator's gRPC calls and never talks to
+      # the Kubernetes API, so it needs no token and no RBAC
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: cnpg-i-pganalyze
+        image: cnpg-i-pganalyze
+        args:
+        - plugin
+        - --server-cert=/server/tls.crt
+        - --server-key=/server/tls.key
+        - --client-cert=/client/tls.crt
+        - --server-address=:9090
+        ports:
+        - name: grpc
+          containerPort: 9090
+          protocol: TCP
+        env:
+        # Default pganalyze API key for clusters that don't name their own
+        # Secret (apiKeySecretName). It is passed to the collector sidecars
+        # as a plain environment value. Create it with:
+        #   kubectl -n cnpg-system create secret generic cnpg-i-pganalyze \
+        #     --from-literal=PGA_API_KEY=your-api-key
+        - name: PGA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: cnpg-i-pganalyze
+              key: PGA_API_KEY
+              optional: true
+        # Only for pganalyze Enterprise Server
+        - name: PGA_API_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: cnpg-i-pganalyze
+              key: PGA_API_BASE_URL
+              optional: true
+        - name: COLLECTOR_IMAGE
+          value: quay.io/pganalyze/collector:stable
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+        livenessProbe:
+          tcpSocket:
+            port: 9090
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          tcpSocket:
+            port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: server
+          mountPath: /server
+        - name: client
+          mountPath: /client
+      volumes:
+      - name: server
+        secret:
+          secretName: cnpg-i-pganalyze-server-tls
+      - name: client
+        secret:
+          secretName: cnpg-i-pganalyze-client-tls
